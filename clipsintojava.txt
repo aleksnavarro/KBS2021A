@@ -1,0 +1,19 @@
+package test;
+
+import net.sf.clipsrules.jni.*;
+
+class BasicDemo {
+
+    public static void main(String args[]){
+        Environment clips;
+        
+        clips = new Environment();
+        
+        clips.eval("(clear)");
+        clips.load("/ruta absoluta de arhcivo");
+        clips.eval("(reset)");
+        clips.eval("(facts)");
+        clips.run();
+    }
+
+}
