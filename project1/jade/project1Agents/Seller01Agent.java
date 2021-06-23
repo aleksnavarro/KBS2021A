@@ -32,29 +32,31 @@ import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 
+import net.sf.clipsrules.jni.*;
+
+
 import java.util.*;
 
 public class BookSellerAgent extends Agent {
 	// The catalogue of books for sale (maps the title of a book to its price)
-	private Hashtable catalogue;
+	//private Hashtable catalogue;
 	// The GUI by means of which the user can add books in the catalogue
-	private BookSellerGui myGui;
+	//private BookSellerGui myGui;
 
 	// Put agent initializations here
 	protected void setup() {
 		// Create the catalogue
-		catalogue = new Hashtable();
+		//catalogue = new Hashtable();
 
 		// Create and show the GUI 
-		myGui = new BookSellerGui(this);
-		myGui.showGui();
-
+		//myGui = new BookSellerGui(this);
+		//myGui.showGui();
 		// Register the book-selling service in the yellow pages
 		DFAgentDescription dfd = new DFAgentDescription();
 		dfd.setName(getAID());
 		ServiceDescription sd = new ServiceDescription();
-		sd.setType("book-selling");
-		sd.setName("JADE-book-trading");
+		sd.setType("Seller01Agent");
+		sd.setName("Seller01Agent");
 		dfd.addServices(sd);
 		try {
 			DFService.register(this, dfd);
@@ -80,7 +82,7 @@ public class BookSellerAgent extends Agent {
 			fe.printStackTrace();
 		}
 		// Close the GUI
-		myGui.dispose();
+		//myGui.dispose();
 		// Printout a dismissal message
 		System.out.println("Seller-agent "+getAID().getName()+" terminating.");
 	}
@@ -91,8 +93,9 @@ public class BookSellerAgent extends Agent {
 	public void updateCatalogue(final String title, final int price) {
 		addBehaviour(new OneShotBehaviour() {
 			public void action() {
-				catalogue.put(title, new Integer(price));
-				System.out.println(title+" inserted into catalogue. Price = "+price);
+				
+				//catalogue.put(title, new Integer(price));
+				//System.out.println(title+" inserted into catalogue. Price = "+price);
 			}
 		} );
 	}
@@ -107,6 +110,14 @@ public class BookSellerAgent extends Agent {
 	 */
 	private class OfferRequestsServer extends CyclicBehaviour {
 		public void action() {
+		
+            clips=new Environment();
+
+            clips.eval("(clear)");
+            clips.load("/media/aleks/DataExtended/Proyectos/CUCEI/9Semestre/KBS/project1/jade/resources/Seller01Rules.clp");
+            clips.eval("(reset)");
+            clips.run();
+		
 			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
 			ACLMessage msg = myAgent.receive(mt);
 			if (msg != null) {
