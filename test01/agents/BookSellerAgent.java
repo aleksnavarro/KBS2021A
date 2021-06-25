@@ -24,6 +24,7 @@ Boston, MA  02111-1307, USA.
 package project01.trading;
 
 import jade.core.Agent;
+import jade.core.AID;
 import jade.core.behaviours.*;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
@@ -52,6 +53,9 @@ public class BookSellerAgent extends Agent {
     Statement stmt = null;
     ResultSet rs;
 
+    //CLIPS
+    Environment clips;
+
 	// Put agent initializations here
 	public void setup() {
 	
@@ -59,7 +63,7 @@ public class BookSellerAgent extends Agent {
             connection = DriverManager.getConnection( "jdbc:sqlite:seller01catalog.db" );
             connection.setAutoCommit(false);
             if ( connection != null ){
-                System.out.println("Conexión exitosa!");
+                System.out.println("Connected succesfully!");
             }
 
             stmt = connection.createStatement();
@@ -82,7 +86,7 @@ public class BookSellerAgent extends Agent {
         }
         catch ( Exception ex ) {
             System.err.println( ex.getClass().getName() + ": " + ex.getMessage() );
-            System.out.println("Error en la conexión");
+            System.out.println("Error in conection");
         };
 
 		// Create the catalogue
@@ -155,8 +159,11 @@ public class BookSellerAgent extends Agent {
 	   with a PROPOSE message specifying the price. Otherwise a REFUSE message is
 	   sent back.
 	 */
+
 	public class OfferRequestsServer extends CyclicBehaviour {
 		public void action() {
+            clips = new Environment();
+
 			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
 			ACLMessage msg = myAgent.receive(mt);
 			if (msg != null) {
@@ -178,6 +185,24 @@ public class BookSellerAgent extends Agent {
                         System.out.println( "CATEGORY = " + category );
                         System.out.println( "EXISTENCES = " + existences );
                         System.out.println();
+
+                        try{
+                            clips.eval("(clear)");
+                            //clips.eval ("(printout t \"carga de reglas aqui\" clrf)");
+                            clips.build("(deftemplate purchase (slot request))");
+                            clips.build("(defrule promo01 \"regla promo\" (purchase (request \"iPhone7\")) => (printout t \"item has a 5% discount\" crlf))");
+                            clips.build("(defrule promo02 \"regla promo\" (purchase (request \"Amplifier\")) => (printout t \"item has a 10% discount\" crlf))");
+                            clips.build("(defrule promo03 \"regla promo\" (purchase (request \"Memory USB\")) => (printout t \"item has a 2x1, get one free!\" crlf))");
+                            clips.assertString("(purchase (request \"" + product + "\"))");
+                            clips.eval("(facts)");
+                            clips.eval("(rules)");
+                            //clips.eval("(reset)");
+                            clips.run();
+
+//                             if(desc == true){price = price - (price * 1/10);}
+//                             else{desc = false;}
+                        }
+                        catch (Exception e){ e.printStackTrace(); }
 
                         // The requested product is available for sale. Reply with affirmative
                         reply.setPerformative(ACLMessage.PROPOSE);
@@ -208,6 +233,7 @@ public class BookSellerAgent extends Agent {
 	   purchase has been sucesfully completed.
 	 */
 	public class PurchaseOrdersServer extends CyclicBehaviour {
+	private AID[] supplierAgents;
 		public void action() {
 			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL);
 			ACLMessage msg = myAgent.receive(mt);
@@ -239,6 +265,8 @@ public class BookSellerAgent extends Agent {
                         else{
                             reply.setPerformative(ACLMessage.FAILURE);
                             reply.setContent("not-available");
+                            //int rsi = stmt.executeUpdate("UPDATE MAIN SET existences = existences+4 WHERE name='"+product+"';");
+                            //supplier();
                         }
                     }
 				}
@@ -254,5 +282,26 @@ public class BookSellerAgent extends Agent {
 				block();
 			}
 		}
-	}  // End of inner class OfferRequestsServer
+
+// 		public void supplier(){
+//             // Update the list of agents
+//             DFAgentDescription template = new DFAgentDescription();
+//             ServiceDescription sd = new ServiceDescription();
+//             sd.setType("book-supplier");
+//             template.addServices(sd);
+//             try {
+//                 DFAgentDescription[] result = DFService.search(myAgent, template);
+//                 System.out.println("Contacted the supplier agent:");
+//                 supplierAgents = new AID[result.length];
+//             }
+//             catch (FIPAException fe) {fe.printStackTrace();}
+//             // Perform the request
+//             ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+//             cfp.addReceiver(supplierAgents);
+//             cfp.setContent(product);
+//             cfp.setConversationId("supplier");
+//             cfp.setReplyWith("cfp"+System.currentTimeMillis()); // Unique value
+//             myAgent.send(cfp);
+// 		}
+	}  // End of inner class
 }

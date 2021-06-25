@@ -53,7 +53,7 @@ public class BookBuyerAgent extends Agent {
 			System.out.println("Target product is "+targetBookTitle);
 
 			// Add a TickerBehaviour that schedules a request to seller agents every minute
-			addBehaviour(new TickerBehaviour(this, 3000) {
+			addBehaviour(new TickerBehaviour(this, 12000) {
 				protected void onTick() {
 					System.out.println("Trying to buy "+targetBookTitle);
 					// Update the list of seller agents
@@ -186,6 +186,7 @@ public class BookBuyerAgent extends Agent {
 		public boolean done() {
 			if (step == 2 && bestSeller == null) {
 				System.out.println("Attempt failed: "+targetBookTitle+" not available for sale");
+				myAgent.doDelete();
 			}
 			return ((step == 2 && bestSeller == null) || step == 4);
 		}
